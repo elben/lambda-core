@@ -218,7 +218,7 @@ parseListWithSurrounding = parseListWithSurroundingPrefix Nothing
 -- >>> parse parseApp "" "(x 1 2 3)"
 -- Right (App (App (App (Var "x") (Lit (IntV 1))) (Lit (IntV 2))) (Lit (IntV 3)))
 --
--- >>> parse parseApp "" "((fn [x y z] (+ x y)) 1 2 3)"
+-- >>> parse parseApp "" "((fn (x y z) (+ x y)) 1 2 3)"
 -- Right (App (App (App (Fun [Var "x",Var "y",Var "z"] (App (App (Var "+") (Var "x")) (Var "y"))) (Lit (IntV 1))) (Lit (IntV 2))) (Lit (IntV 3)))
 --
 parseApp :: Parser Exp
@@ -246,16 +246,16 @@ buildAppStack fn (a:as) = buildAppStack (App fn a) as
 
 -- | Parse functions.
 --
--- >>> parse parseFun "" "(fn [x y z] (x y z))"
+-- >>> parse parseFun "" "(fn (x y z) (x y z))"
 -- Right (Fun [Var "x",Var "y",Var "z"] (App (App (Var "x") (Var "y")) (Var "z")))
 --
--- >>> parse parseFun "" "(fn [] 3)"
--- Right (Fun [] (Lit (IntV 3)))
+-- >>> isLeft $ parse parseFun "" "(fn () 3)"
+-- True
 --
 parseFun :: Parser Exp
 parseFun = do
   parseStartsListWith "fn"
-  argsVec <- parseVecOfVars
+  argsVec <- parseFunArgs1
   body <- parseBodyOfFun
   return $ Fun argsVec body
 
@@ -274,28 +274,28 @@ parseBodyOfFun = do
 
 -- | Parse vector of vars.
 --
--- >>> parse parseVecOfVars "" "[]"
--- Right []
+-- >>> isLeft $ parse parseFunArgs1 "" "()"
+-- True
 --
--- >>> parse parseVecOfVars "" "[x y z]"
+-- >>> parse parseFunArgs1 "" "(x y z)"
 -- Right [Var "x",Var "y",Var "z"]
 --
-parseVecOfVars :: Parser [Exp]
-parseVecOfVars = do
-  _ <- char '['
-  vars <- sepBy parseVar skipSpaces1
-  _ <- char ']'
+parseFunArgs1 :: Parser [Exp]
+parseFunArgs1 = do
+  _ <- char '('
+  vars <- sepBy1 parseVar skipSpaces1
+  _ <- char ')'
   return vars
 
 -- | Parse let expressions.
 --
--- >>> parse parseLet "" "(let [x 1 y 2] (+ x y))"
+-- >>> parse parseLet "" "(let (x 1 y 2) (+ x y))"
 -- Right (Let (Var "x") (Lit (IntV 1)) (Let (Var "y") (Lit (IntV 2)) (App (App (Var "+") (Var "x")) (Var "y"))))
 --
--- >>> isLeft $ parse parseLet "" "(let [] (+ x y))"
+-- >>> isLeft $ parse parseLet "" "(let () (+ x y))"
 -- True
 --
--- >>> isLeft $ parse parseLet "" "(let [x 1 y] (+ x y))"
+-- >>> isLeft $ parse parseLet "" "(let (x 1 y) (+ x y))"
 -- True
 --
 parseLet :: Parser Exp
@@ -313,20 +313,20 @@ buildLetBindingStack _ _ = error "let has invalid bindings"
 
 -- | Parse (var, exp) pairs. Must have at least one.
 --
--- >>> parse parseVarExpPairs "" "[x 1 y 2]"
+-- >>> parse parseVarExpPairs "" "(x 1 y 2)"
 -- Right [(Var "x",Lit (IntV 1)),(Var "y",Lit (IntV 2))]
 --
--- >>> isLeft $ parse parseLet "" "[]"
+-- >>> isLeft $ parse parseLet "" "()"
 -- True
 --
--- >>> isLeft $ parse parseLet "" "[x 1 y]"
+-- >>> isLeft $ parse parseLet "" "(x 1 y)"
 -- True
 --
 parseVarExpPairs :: Parser [(Exp, Exp)]
 parseVarExpPairs = do
-  _ <- char '['
+  _ <- char '('
   pairs <- sepBy1 parseVarExpPair skipSpaces1
-  _ <- char ']'
+  _ <- char ')'
   return pairs
 
 parseVarExpPair :: Parser (Exp, Exp)
@@ -373,10 +373,10 @@ parseIf = do
 -- >>> isLeft $ parse parseExp "" "(foo)"
 -- True
 --
--- >>> parse parseExp "" "(let [x 1 y 2] (+ x y))"
+-- >>> parse parseExp "" "(let (x 1 y 2) (+ x y))"
 -- Right (Let (Var "x") (Lit (IntV 1)) (Let (Var "y") (Lit (IntV 2)) (App (App (Var "+") (Var "x")) (Var "y"))))
 --
--- >>> parse parseExp "" "(let [x 1 y 2] (if true x y))"
+-- >>> parse parseExp "" "(let (x 1 y 2) (if true x y))"
 -- Right (Let (Var "x") (Lit (IntV 1)) (Let (Var "y") (Lit (IntV 2)) (If (Lit (BoolV True)) (Var "x") (Var "y"))))
 --
 parseExp :: Parser Exp
@@ -410,7 +410,7 @@ parseLine = do
 -- >>> parseProgram "(+ 1 2)"
 -- Right (App (App (Var "+") (Lit (IntV 1))) (Lit (IntV 2)))
 --
--- >>> parseProgram "(fn [x y] (x y))"
+-- >>> parseProgram "(fn (x y) (x y))"
 -- Right (Fun [Var "x",Var "y"] (App (Var "x") (Var "y")))
 --
 -- >>> isLeft $ parseProgram "+ 13"
