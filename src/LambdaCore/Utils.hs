@@ -20,7 +20,6 @@ toLisp (Lit (IntV v)) = show v
 toLisp (Lit (BoolV v)) = if v then "true" else "false"
 toLisp (Lit (StringV v)) = show v
 toLisp (Var v) = v
-toLisp (Def var body) = "(def " ++ toLisp var ++ " " ++ toLisp body ++ ")"
 toLisp (Fun vs body) = "(fn [" ++ unwords (map toLisp vs) ++ "] " ++ toLisp body ++ ")"
 toLisp (App vs body) = "(" ++ toLisp vs ++ " " ++ toLisp body ++ ")"
 toLisp (Let v e body) = "(let [" ++ toLisp v ++ " " ++ toLisp e ++ "] " ++ toLisp body ++ ")"

@@ -4,7 +4,6 @@ import LambdaCore.Data
 import LambdaCore.Utils
 import LambdaCore.TypeChecker
 import qualified Data.Map.Strict as M
-import Control.Monad
 import Data.Maybe (fromMaybe)
 
 type EvalEnv = M.Map VarName Exp
@@ -16,6 +15,11 @@ data EvalError = UnboundedVariable Exp VarName
                | GenericError Exp String
 
 type ProgramError = Either TypeError EvalError
+
+programError :: ProgramError -> String
+programError pe = case pe of
+  Left typeError -> error $ show typeError
+  Right evalError -> error $ show evalError
 
 -- | Substitute variables in expression, but don't apply.
 --

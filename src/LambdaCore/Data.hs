@@ -1,10 +1,22 @@
 module LambdaCore.Data where
 
+import qualified Data.Set as S
+
+-- Program code
+type Program = String
+
 -- Variable name
 type VarName = String
 
 -- Type variable
 type TName = String
+
+reservedIds :: S.Set String
+reservedIds = S.fromList ["fn", "let"]
+
+-- | Symbols that can be part of symbol-only identifiers.
+validIdSymbols :: String
+validIdSymbols = "<>=%^*-+/"
 
 data Value = IntV Int
            | BoolV Bool
@@ -13,7 +25,6 @@ data Value = IntV Int
 
 data Exp = Lit Value
          | Var VarName       -- ^ Var "x"
-         | Def Exp Exp       -- ^ Def (Var "x") Exp
          | Fun [Exp] Exp
          | App Exp Exp       -- ^ App (Fun or Var) (Argument value)
          | Let Exp Exp Exp   -- ^ Let (Var "x") (Value of x) Body.
