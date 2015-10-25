@@ -40,6 +40,8 @@ defaultEnv = M.fromList [
  ,("and", Fun [Var "a",Var "b"] (BinOp "and" (Var "a") (Var "b")))
  ,("or", Fun [Var "a",Var "b"] (BinOp "or" (Var "a") (Var "b")))
  ,("xor", Fun [Var "a",Var "b"] (BinOp "xor" (Var "a") (Var "b")))
+
+ ,("++", Fun [Var "a",Var "b"] (BinOp "++" (Var "a") (Var "b")))
  ]
 
 evalExp :: Exp -> Answer
@@ -125,16 +127,20 @@ eval' env expr = case expr of
       a' <- eval' env a >>= extractBool
       b' <- eval' env b >>= extractBool
       return $ Lit (BoolV (a' && b'))
-
     "or" -> do
       a' <- eval' env a >>= extractBool
       b' <- eval' env b >>= extractBool
       return $ Lit (BoolV (a' || b'))
-
     "xor" -> do
       a' <- eval' env a >>= extractBool
       b' <- eval' env b >>= extractBool
       return $ Lit (BoolV ((a' && not b') || (not a' && b')))
+
+    "++" -> do
+      a' <- eval' env a >>= extractString
+      b' <- eval' env b >>= extractString
+      return $ Lit (StringV (a' ++ b'))
+
     _ -> Left $ GenericError expr "Not a valid binary operation."
 
 extractInt :: Exp -> Either EvalError Int

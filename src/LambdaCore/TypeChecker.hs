@@ -494,6 +494,8 @@ defaultTEnv = M.fromList [
  ,("and", Forall [] (TFun [TBool,TBool,TBool]))
  ,("or", Forall [] (TFun [TBool,TBool,TBool]))
  ,("xor", Forall [] (TFun [TBool,TBool,TBool]))
+
+ ,("++", Forall [] (TFun [TString,TString,TString]))
   ]
 
 emptyTEnv :: TEnv
